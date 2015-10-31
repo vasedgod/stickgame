@@ -43,6 +43,7 @@ var mouseLocX = 0
 var mouseLocY = 0
 var momentum = 0;
 var iconSize = 50
+
 addEventListener("keydown", function (e) {
 	keysDown[e.keyCode] = true;
 }, false);
@@ -95,7 +96,7 @@ var update = function (modifier) {
     else if(mouseLocX <= (hero.x + iconSize)
             && hero.x <= (mouseLocX)
             && mouseLocY <= (hero.y + iconSize)
-            && hero.y <= (mouseLocX)){
+            && hero.y <= (mouseLocY)){
         hero.x = mouseLocX-30;
         hero.y = mouseLocY-30;
         
