@@ -86,7 +86,7 @@ var reset = function() {
 };
 // Update game objects
 var update = function(modifier) {
-    if(!mouseDown) {
+    /*if(!mouseDown) {
         if(38 in keysDown && stick.y > 0) { // Player holding up
             stick.y -= stick.speed * modifier;
         }
@@ -99,7 +99,12 @@ var update = function(modifier) {
         if(39 in keysDown && stick.x < canvas.width - iconSize) { // Player holding right
             stick.x += stick.speed * modifier;
         }
-    } else if(stickGrabbed) {
+    } else */
+    if(mouseDown && stickGrabbed
+        && stick.x > 0
+        && stick.x < (canvas.width - iconSize)
+        && stick.y > 0
+        && stick.y < (canvas.height - iconSize)) {
         stick.x = mouseLocX - iconSize / 2;
         stick.y = mouseLocY - iconSize / 2;
     }
