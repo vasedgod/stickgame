@@ -43,7 +43,7 @@ var mouseDown = false;
 var mouseLocX = 0;
 var mouseLocY = 0;
 var mouseVelocity = {x:0, y:0};
-var friction = 0.9;
+var friction = 0.93;
 var stickGrabbed = false;
 
 
@@ -110,17 +110,17 @@ var update = function(modifier) {
         }
     } else */
     if(mouseDown && stickGrabbed
-        && mouseLocX > 0
-        && mouseLocX < (canvas.width - iconSize/2)
-        && mouseLocY > 0
-        && mouseLocY < (canvas.height - iconSize/2)) {
+        && mouseLocX > 0+iconSize
+        && mouseLocX < (canvas.width - 1.5*iconSize)
+        && mouseLocY > 0+iconSize
+        && mouseLocY < (canvas.height - 1.5*iconSize)) {
         stick.x = mouseLocX - iconSize / 2;
         stick.y = mouseLocY - iconSize / 2;
     }
-    else if (mouseLocX > 0
-        && mouseLocX < (canvas.width - iconSize/2)
-        && mouseLocY > 0
-        && mouseLocY < (canvas.height - iconSize/2)){
+    else if (stick.x > 0+iconSize
+        && stick.x < (canvas.width - 1.5*iconSize)
+        && stick.y > 0+iconSize
+        && stick.y < (canvas.height - 1.5*iconSize)){
         stick.x = stick.x + stick.dx;
         stick.y = stick.y + stick.dy;
         stick.dx *= friction;
