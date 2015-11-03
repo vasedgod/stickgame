@@ -38,13 +38,14 @@ var fionna = {
     dy: 0
 };
 var sticksFetched = 0;
-// Handle keyboard controls
 var keysDown = {};
 var mouseDown = false;
 var mouseLocX = 0;
 var mouseLocY = 0;
-var momentum = 0;
+var mouseVelocity = {x:0, y:0};
+var friction = 0.9;
 var stickGrabbed = false;
+
 
 //Collect the EventListeners here
 addEventListener("keydown", function(e) {
@@ -65,12 +66,18 @@ addEventListener("mousedown", function(e) {
     }
 }, false);
 addEventListener("mouseup", function(e) {
+    if (mouseDown = true) {
+        stick.dx = mouseVelocity.x;
+        stick.dy = mouseVelocity.y;
+    }
     mouseDown = false;
     //Release the stick if the mouse button is released, or mouseDown = false
     stickGrabbed = false;
 }, false);
 addEventListener("mousemove", function(e) {
     e = e || event;
+    mouseVelocity.x = e.pageX - mouseLocX;
+    mouseVelocity.y = e.pageY - mouseLocY;
     mouseLocX = e.pageX;
     mouseLocY = e.pageY;
 }, false);
@@ -81,8 +88,10 @@ var reset = function() {
     stick.x = canvas.width / 2;
     stick.y = canvas.height / 2;
     // Throw the fionna somewhere on the screen randomly
-    fionna.x = 32 + (Math.random() * (canvas.width - iconSize));
-    fionna.y = 32 + (Math.random() * (canvas.height - iconSize));
+    fionna.x = 32 + (Math.random() * (canvas.width - 2*iconSize));
+    fionna.y = 32 + (Math.random() * (canvas.height - 2*iconSize));
+    stick.dx = 0;
+    stick.dy = 0;
 };
 // Update game objects
 var update = function(modifier) {
@@ -101,12 +110,21 @@ var update = function(modifier) {
         }
     } else */
     if(mouseDown && stickGrabbed
-        && stick.x > 0
-        && stick.x < (canvas.width - iconSize)
-        && stick.y > 0
-        && stick.y < (canvas.height - iconSize)) {
+        && mouseLocX > 0
+        && mouseLocX < (canvas.width - iconSize/2)
+        && mouseLocY > 0
+        && mouseLocY < (canvas.height - iconSize/2)) {
         stick.x = mouseLocX - iconSize / 2;
         stick.y = mouseLocY - iconSize / 2;
+    }
+    else if (mouseLocX > 0
+        && mouseLocX < (canvas.width - iconSize/2)
+        && mouseLocY > 0
+        && mouseLocY < (canvas.height - iconSize/2)){
+        stick.x = stick.x + stick.dx;
+        stick.y = stick.y + stick.dy;
+        stick.dx *= friction;
+        stick.dy *= friction;
     }
     // Are they touching?
     if(stick.x <= (fionna.x + iconSize) 
