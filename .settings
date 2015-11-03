@@ -1,12 +1,12 @@
 [editor]
 ; enter your editor preferences here...
-
+linting = true
 [ide]
 ; enter your ide preferences here...
 
 [code-beautifier]
 ; enter your code-beautifier preferences here...
-
+indent_level = 4
 [view-javascript-code]
 ; enter your view-javascript-code preferences here...
 
@@ -15,6 +15,7 @@
 
 [terminal]
 ; enter your terminal preferences here...
+font_size = 16
 
 [preview]
 index_file = index.html

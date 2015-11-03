@@ -43,7 +43,7 @@ var mouseDown = false;
 var mouseLocX = 0;
 var mouseLocY = 0;
 var mouseVelocity = {x:0, y:0};
-var friction = 0.99;
+var friction = 0.96;
 var stickGrabbed = false;
 var topPadding = 1;
 var bottomPadding = 2; 
@@ -61,7 +61,7 @@ addEventListener("mousedown", function(e) {
     mouseDown = true;
     //If the mouse clicks down on the stick, we will consider the stick grabbed,
     // and it will follow the cursor until mouseDown=false
-    if (mouseLocX <= (stick.x + 1.5 * iconSize) 
+    if (mouseLocX <= (stick.x + 1.5 * iconSize)
         && stick.x <= (mouseLocX) 
         && mouseLocY <= (stick.y + 1.5 * iconSize) 
         && stick.y <= (mouseLocY)){
@@ -69,7 +69,9 @@ addEventListener("mousedown", function(e) {
     }
 }, false);
 addEventListener("mouseup", function(e) {
-    if (mouseDown = true) {
+    //Set so that stick must actually be grabbed in order to throw it.
+    //Might set this back to if (mouseDown) later, could be touchDown or whatever also.
+    if (stickGrabbed) {
         stick.dx = mouseVelocity.x;
         stick.dy = mouseVelocity.y;
     }
@@ -91,7 +93,7 @@ var reset = function() {
     stick.x = canvas.width / 2;
     stick.y = canvas.height / 2;
     // Throw the fionna somewhere on the screen randomly
-    fionna.x = leftPadding * iconSize + (Math.random() * (canvas.width - rightPadding * iconSize));
+    fionna.x = leftPadding * iconSize + (Math.random() * (canvas.width - 2 * rightPadding * iconSize));
     fionna.y = topPadding * iconSize + (Math.random() * (canvas.height - bottomPadding * iconSize));
     stick.dx = 0;
     stick.dy = 0;
@@ -101,7 +103,7 @@ var update = function(modifier) {
     //These variables adjust the padding for how far from the canvas border the stick can bounce
     //In units of 'iconSize', the size of the stick and Fionna icons.
     
-    var bounceDecayFactor = 0.5;
+    var bounceDecayFactor = 0.95;
     
     if(mouseDown && stickGrabbed
         && mouseLocX > leftPadding * iconSize
@@ -121,8 +123,15 @@ var update = function(modifier) {
         //If it won't, move it along by dx and dy and adjust the new dx and dy with our friction variable
         stick.x = stick.x + stick.dx;
         stick.y = stick.y + stick.dy;
-        stick.dx *= friction;
-        stick.dy *= friction;
+        stick.dx *= friction - 0.1;
+        stick.dy *= friction - 0.1;
+        //If speed of stick is small enough, just set it to zero so it doesn't slow down forever
+        if (Math.abs(stick.dx) < 0.0001){
+            stick.dx = 0;
+        }
+        if (Math.abs(stick.dy) < 0.0001){
+            stick.dy = 0;
+        }
     }
     else{
         //If the next time step will take it out of bounds, set the position of the stick to be directly 
