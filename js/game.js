@@ -43,9 +43,12 @@ var mouseDown = false;
 var mouseLocX = 0;
 var mouseLocY = 0;
 var mouseVelocity = {x:0, y:0};
-var friction = 0.93;
+var friction = 0.99;
 var stickGrabbed = false;
-
+var topPadding = 1;
+var bottomPadding = 2; 
+var leftPadding = 2;
+var rightPadding = 2.5;
 
 //Collect the EventListeners here
 addEventListener("keydown", function(e) {
@@ -88,43 +91,59 @@ var reset = function() {
     stick.x = canvas.width / 2;
     stick.y = canvas.height / 2;
     // Throw the fionna somewhere on the screen randomly
-    fionna.x = 32 + (Math.random() * (canvas.width - 2*iconSize));
-    fionna.y = 32 + (Math.random() * (canvas.height - 2*iconSize));
+    fionna.x = leftPadding * iconSize + (Math.random() * (canvas.width - rightPadding * iconSize));
+    fionna.y = topPadding * iconSize + (Math.random() * (canvas.height - bottomPadding * iconSize));
     stick.dx = 0;
     stick.dy = 0;
 };
 // Update game objects
 var update = function(modifier) {
-    /*if(!mouseDown) {
-        if(38 in keysDown && stick.y > 0) { // Player holding up
-            stick.y -= stick.speed * modifier;
-        }
-        if(40 in keysDown && stick.y < canvas.height - iconSize) { // Player holding down
-            stick.y += stick.speed * modifier;
-        }
-        if(37 in keysDown && stick.x > 0) { // Player holding left
-            stick.x -= stick.speed * modifier;
-        }
-        if(39 in keysDown && stick.x < canvas.width - iconSize) { // Player holding right
-            stick.x += stick.speed * modifier;
-        }
-    } else */
+    //These variables adjust the padding for how far from the canvas border the stick can bounce
+    //In units of 'iconSize', the size of the stick and Fionna icons.
+    
+    var bounceDecayFactor = 0.5;
+    
     if(mouseDown && stickGrabbed
-        && mouseLocX > 0+iconSize
-        && mouseLocX < (canvas.width - 1.5*iconSize)
-        && mouseLocY > 0+iconSize
-        && mouseLocY < (canvas.height - 1.5*iconSize)) {
+        && mouseLocX > leftPadding * iconSize
+        && mouseLocX < (canvas.width - rightPadding * iconSize)
+        && mouseLocY > topPadding * iconSize
+        && mouseLocY < (canvas.height - bottomPadding * iconSize)) {
+        //Center the stick under the cursor at all times while stickGrabbed is true
+        //and the mouse button is still held down
         stick.x = mouseLocX - iconSize / 2;
         stick.y = mouseLocY - iconSize / 2;
     }
-    else if (stick.x > 0+iconSize
-        && stick.x < (canvas.width - 1.5*iconSize)
-        && stick.y > 0+iconSize
-        && stick.y < (canvas.height - 1.5*iconSize)){
+    else if (stick.x+stick.dx > leftPadding * iconSize
+        && stick.x+stick.dx < (canvas.width - rightPadding * iconSize)
+        && stick.y+stick.dy > topPadding * iconSize
+        && stick.y+stick.dy < (canvas.height - bottomPadding * iconSize)){
+        //Checking for if the next time step will send the stick at its current velocity out of bounds
+        //If it won't, move it along by dx and dy and adjust the new dx and dy with our friction variable
         stick.x = stick.x + stick.dx;
         stick.y = stick.y + stick.dy;
         stick.dx *= friction;
         stick.dy *= friction;
+    }
+    else{
+        //If the next time step will take it out of bounds, set the position of the stick to be directly 
+        //on the boundary it would hit, and flip the dx/dy appropriately and apply an energy loss
+        if (stick.x + stick.dx <= leftPadding * iconSize){
+            stick.x = leftPadding * iconSize;
+            stick.dx = stick.dx * friction * -1 * bounceDecayFactor; //If the stick hits the left wall, flip its dx and apply energy loss
+        }
+        if (stick.y + stick.dy <= topPadding * iconSize){
+            stick.y = topPadding * iconSize;
+            stick.dy = stick.dy * friction * -1 * bounceDecayFactor;
+        }
+        if (stick.x + stick.dx >= (canvas.width - rightPadding * iconSize)){
+            stick.x = canvas.width - rightPadding * iconSize;
+            stick.dx = stick.dx * friction * -1 * bounceDecayFactor;
+        }
+        if (stick.y + stick.dy >= (canvas.height - bottomPadding * iconSize)){
+            stick.y = canvas.height - bottomPadding * iconSize;
+            stick.dy = stick.dy * friction * -1 * bounceDecayFactor;
+        }
+        
     }
     // Are they touching?
     if(stick.x <= (fionna.x + iconSize) 
