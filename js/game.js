@@ -6,6 +6,7 @@ var iconSize = 50;
 canvas.width = window.innerWidth*0.9;
 canvas.height = window.innerHeight*0.9;
 document.body.appendChild(canvas);
+
 // Background image
 var bgReady = false;
 var bgImage = new Image();
@@ -27,6 +28,19 @@ fionnaImage.onload = function() {
     fionnaReady = true;
 };
 fionnaImage.src = "images/fionna.png";
+
+//Canvas variables, etc.
+var sticksFetched = 0;
+var keysDown = {};
+var gameScale = canvas.width / 512;
+var friction = 0.95 + (0.003 * gameScale);
+var verticalPadding = canvas.height/15; 
+var horizontalPadding = canvas.width/16;
+console.log("verticalPadding = " + verticalPadding);
+console.log("horizontalPadding = " + horizontalPadding);
+console.log("friction = " + friction);
+console.log("gameScale = " + gameScale);
+
 // Game objects
 var stick = {
     dx: 0, //amount to move left-right next time step
@@ -34,7 +48,7 @@ var stick = {
     isGrabbed: false
 };
 var fionna = {
-    speed: 3,
+    speed: 3 + gameScale,
     toStickX: 0,
     toStickY: 0,
     toStickMagnitude: 0,
@@ -49,13 +63,6 @@ var mouse = {
     isClicked : false
 };
 
-var sticksFetched = 0;
-var keysDown = {};
-var friction = 0.96;
-var topPadding = 1;
-var bottomPadding = 2; 
-var leftPadding = 2;
-var rightPadding = 2.5;
 
 //Collect the EventListeners here
 addEventListener("keydown", function(e) {
@@ -88,8 +95,8 @@ addEventListener("mouseup", function(e) {
 }, false);
 addEventListener("mousemove", function(e) {
     e = e || event;
-    mouse.velocityX = e.pageX - mouse.x;
-    mouse.velocityY = e.pageY - mouse.y;
+    mouse.velocityX = (e.pageX - mouse.x) * 2 * gameScale;
+    mouse.velocityY = (e.pageY - mouse.y) * 2 * gameScale;
     mouse.x = e.pageX;
     mouse.y = e.pageY;
 }, false);
@@ -97,11 +104,12 @@ addEventListener("mousemove", function(e) {
 var reset = function() {
     //Release the mouse button variable when the game resets, want the mouse to be picked up every time.
     mouse.isClicked = false;
+    stick.isGrabbed = false;
     stick.x = canvas.width / 2;
     stick.y = canvas.height / 2;
     // Throw the fionna somewhere on the screen randomly
-    fionna.x = leftPadding * iconSize + (Math.random() * (canvas.width - 2 * rightPadding * iconSize));
-    fionna.y = topPadding * iconSize + (Math.random() * (canvas.height - bottomPadding * iconSize));
+    fionna.x = horizontalPadding + (Math.random() * (canvas.width - horizontalPadding - iconSize));
+    fionna.y = verticalPadding + (Math.random() * (canvas.height - verticalPadding - iconSize));
     stick.dx = 0;
     stick.dy = 0;
 };
@@ -112,20 +120,24 @@ var update = function(modifier) {
     
     var bounceDecayFactor = 0.95;
     
-    if(mouse.isClicked && stick.isGrabbed
-        && mouse.x > leftPadding * iconSize
-        && mouse.x < (canvas.width - rightPadding * iconSize)
-        && mouse.y > topPadding * iconSize
-        && mouse.y < (canvas.height - bottomPadding * iconSize)) {
-        //Center the stick under the cursor at all times while stick.isGrabbed is true
-        //and the mouse button is still held down
-        stick.x = mouse.x - iconSize / 2;
-        stick.y = mouse.y - iconSize / 2;
+    //MOUSE DRAGGING HANDLER
+    //Allow stick to be dragged freely along either axis as long as that axis is not
+    //blocked by a boundary
+    if(mouse.isClicked && stick.isGrabbed){
+        if(mouse.x > (horizontalPadding + iconSize / 2)
+        && mouse.x < (canvas.width - horizontalPadding - iconSize / 2)){
+            stick.x = mouse.x - iconSize / 2;
+        }
+        if(mouse.y > (verticalPadding + iconSize / 2)
+        && mouse.y < (canvas.height - verticalPadding - iconSize / 2)) {
+            stick.y = mouse.y - iconSize / 2;
+        }
     }
-    else if (stick.x + stick.dx > leftPadding * iconSize
-        && stick.x + stick.dx < (canvas.width - rightPadding * iconSize)
-        && stick.y + stick.dy > topPadding * iconSize
-        && stick.y + stick.dy < (canvas.height - bottomPadding * iconSize)){
+    //STICK TRAJECTORY HANDLER
+    else if (stick.x + stick.dx > (horizontalPadding)
+        && stick.x + stick.dx < (canvas.width - horizontalPadding - iconSize)
+        && stick.y + stick.dy > (verticalPadding)
+        && stick.y + stick.dy < (canvas.height - verticalPadding - iconSize)){
         //Checking for if the next time step will send the stick at its current velocity out of bounds
         //If it won't, move it along by dx and dy and adjust the new dx and dy with our friction variable
         stick.x = stick.x + stick.dx;
@@ -140,39 +152,42 @@ var update = function(modifier) {
             stick.dy = 0;
         }
     }
+    //STICK BOUNCE HANDLER
     else{
         //If the next time step will take it out of bounds, set the position of the stick to be directly 
         //on the boundary it would hit, and flip the dx/dy appropriately and apply an energy loss
-        if (stick.x + stick.dx <= leftPadding * iconSize){
-            stick.x = leftPadding * iconSize;
+        if (stick.x + stick.dx <= horizontalPadding){
+            stick.x = horizontalPadding;
             stick.dx = stick.dx * friction * -1 * bounceDecayFactor; //If the stick hits the left wall, flip its dx and apply energy loss
         }
-        if (stick.y + stick.dy <= topPadding * iconSize){
-            stick.y = topPadding * iconSize;
-            stick.dy = stick.dy * friction * -1 * bounceDecayFactor;
-        }
-        if (stick.x + stick.dx >= (canvas.width - rightPadding * iconSize)){
-            stick.x = canvas.width - rightPadding * iconSize;
+        if (stick.x + stick.dx >= (canvas.width - horizontalPadding - iconSize)){
+            stick.x = canvas.width - horizontalPadding - iconSize;
             stick.dx = stick.dx * friction * -1 * bounceDecayFactor;
         }
-        if (stick.y + stick.dy >= (canvas.height - bottomPadding * iconSize)){
-            stick.y = canvas.height - bottomPadding * iconSize;
+        if (stick.y + stick.dy <= verticalPadding){
+            stick.y = verticalPadding;
+            stick.dy = stick.dy * friction * -1 * bounceDecayFactor;
+        }
+        if (stick.y + stick.dy >= (canvas.height - verticalPadding - iconSize)){
+            stick.y = canvas.height - verticalPadding - iconSize;
             stick.dy = stick.dy * friction * -1 * bounceDecayFactor;
         }
         
     }
     
+    //Fionna finds the vector from her to the stick, takes the magnitude, calculates unit vector, scales it to her speed
     fionna.toStickX = stick.x - fionna.x;
     fionna.toStickY = stick.y - fionna.y;
     fionna.toStickMagnitude = Math.sqrt(Math.pow(fionna.toStickX,2), Math.pow(fionna.toStickY,2));
     fionna.dx = fionna.speed * fionna.toStickX / fionna.toStickMagnitude;
     fionna.dy = fionna.speed * fionna.toStickY / fionna.toStickMagnitude;
     
-    
-    if (fionna.x + fionna.dx > leftPadding * iconSize
-        && fionna.x + fionna.dx < (canvas.width - rightPadding * iconSize)
-        && fionna.y + fionna.dy > topPadding * iconSize
-        && fionna.y + fionna.dy < (canvas.height - bottomPadding * iconSize)){
+    //Check if Fionna's about to move out of bounds. This shouldn't ever come up while she's not making up her own paths.
+    //While she is in bounds, move her by (dx,dy).
+    if (fionna.x + fionna.dx > (horizontalPadding)
+        && fionna.x + fionna.dx < (canvas.width - horizontalPadding - iconSize)
+        && fionna.y + fionna.dy > (verticalPadding)
+        && fionna.y + fionna.dy < (canvas.height - verticalPadding - iconSize)){
         fionna.x += fionna.dx;
         fionna.y += fionna.dy;
     };
