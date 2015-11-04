@@ -108,8 +108,10 @@ var reset = function() {
     stick.x = canvas.width / 2;
     stick.y = canvas.height / 2;
     // Throw the fionna somewhere on the screen randomly
-    fionna.x = horizontalPadding + (Math.random() * (canvas.width - horizontalPadding - iconSize));
-    fionna.y = verticalPadding + (Math.random() * (canvas.height - verticalPadding - iconSize));
+    fionna.x = horizontalPadding + (Math.random() * (canvas.width - 2 * horizontalPadding - iconSize));
+    fionna.y = verticalPadding + (Math.random() * (canvas.height - 2 * verticalPadding - iconSize));
+    fionna.dx = 0;
+    fionna.dy = 0;
     stick.dx = 0;
     stick.dy = 0;
 };
@@ -134,16 +136,19 @@ var update = function(modifier) {
         }
     }
     //STICK TRAJECTORY HANDLER
-    else if (stick.x + stick.dx > (horizontalPadding)
-        && stick.x + stick.dx < (canvas.width - horizontalPadding - iconSize)
-        && stick.y + stick.dy > (verticalPadding)
-        && stick.y + stick.dy < (canvas.height - verticalPadding - iconSize)){
+    else{
         //Checking for if the next time step will send the stick at its current velocity out of bounds
         //If it won't, move it along by dx and dy and adjust the new dx and dy with our friction variable
-        stick.x = stick.x + stick.dx;
-        stick.y = stick.y + stick.dy;
-        stick.dx *= friction - 0.1;
-        stick.dy *= friction - 0.1;
+        if(stick.x + stick.dx > (horizontalPadding)
+            && stick.x + stick.dx < (canvas.width - horizontalPadding - iconSize)){
+            stick.x = stick.x + stick.dx;
+            stick.dx *= friction - 0.1;
+        }
+        if(stick.y + stick.dy > (verticalPadding)
+            && stick.y + stick.dy < (canvas.height - verticalPadding - iconSize)){
+            stick.y = stick.y + stick.dy;
+            stick.dy *= friction - 0.1;
+        }
         //If speed of stick is small enough, just set it to zero so it doesn't slow down forever
         if (Math.abs(stick.dx) < 0.0001){
             stick.dx = 0;
@@ -151,44 +156,45 @@ var update = function(modifier) {
         if (Math.abs(stick.dy) < 0.0001){
             stick.dy = 0;
         }
-    }
+    
     //STICK BOUNCE HANDLER
-    else{
+        else{
         //If the next time step will take it out of bounds, set the position of the stick to be directly 
         //on the boundary it would hit, and flip the dx/dy appropriately and apply an energy loss
-        if (stick.x + stick.dx <= horizontalPadding){
-            stick.x = horizontalPadding;
-            stick.dx = stick.dx * friction * -1 * bounceDecayFactor; //If the stick hits the left wall, flip its dx and apply energy loss
+            if (stick.x + stick.dx <= horizontalPadding){
+                stick.x = horizontalPadding;
+                stick.dx = stick.dx * friction * -1 * bounceDecayFactor; //If the stick hits the left wall, flip its dx and apply energy loss
+            }
+            if (stick.x + stick.dx >= (canvas.width - horizontalPadding - iconSize)){
+                stick.x = canvas.width - horizontalPadding - iconSize;
+                stick.dx = stick.dx * friction * -1 * bounceDecayFactor;
+            }
+            if (stick.y + stick.dy <= verticalPadding){
+                stick.y = verticalPadding;
+                stick.dy = stick.dy * friction * -1 * bounceDecayFactor;
+            }
+            if (stick.y + stick.dy >= (canvas.height - verticalPadding - iconSize)){
+                stick.y = canvas.height - verticalPadding - iconSize;
+                stick.dy = stick.dy * friction * -1 * bounceDecayFactor;
+            }
         }
-        if (stick.x + stick.dx >= (canvas.width - horizontalPadding - iconSize)){
-            stick.x = canvas.width - horizontalPadding - iconSize;
-            stick.dx = stick.dx * friction * -1 * bounceDecayFactor;
-        }
-        if (stick.y + stick.dy <= verticalPadding){
-            stick.y = verticalPadding;
-            stick.dy = stick.dy * friction * -1 * bounceDecayFactor;
-        }
-        if (stick.y + stick.dy >= (canvas.height - verticalPadding - iconSize)){
-            stick.y = canvas.height - verticalPadding - iconSize;
-            stick.dy = stick.dy * friction * -1 * bounceDecayFactor;
-        }
-        
     }
     
     //Fionna finds the vector from her to the stick, takes the magnitude, calculates unit vector, scales it to her speed
     fionna.toStickX = stick.x - fionna.x;
     fionna.toStickY = stick.y - fionna.y;
-    fionna.toStickMagnitude = Math.sqrt(Math.pow(fionna.toStickX,2), Math.pow(fionna.toStickY,2));
+    fionna.toStickMagnitude = Math.sqrt(Math.pow(fionna.toStickX,2) + Math.pow(fionna.toStickY,2));
     fionna.dx = fionna.speed * fionna.toStickX / fionna.toStickMagnitude;
     fionna.dy = fionna.speed * fionna.toStickY / fionna.toStickMagnitude;
     
     //Check if Fionna's about to move out of bounds. This shouldn't ever come up while she's not making up her own paths.
     //While she is in bounds, move her by (dx,dy).
-    if (fionna.x + fionna.dx > (horizontalPadding)
-        && fionna.x + fionna.dx < (canvas.width - horizontalPadding - iconSize)
-        && fionna.y + fionna.dy > (verticalPadding)
-        && fionna.y + fionna.dy < (canvas.height - verticalPadding - iconSize)){
+    if(fionna.x + fionna.dx > (horizontalPadding)
+        && fionna.x + fionna.dx < (canvas.width - horizontalPadding - iconSize)){
         fionna.x += fionna.dx;
+    }
+    if(fionna.y + fionna.dy > (verticalPadding)
+        && fionna.y + fionna.dy < (canvas.height - verticalPadding - iconSize)){
         fionna.y += fionna.dy;
     };
     
