@@ -30,21 +30,28 @@ fionnaImage.src = "images/fionna.png";
 // Game objects
 var stick = {
     dx: 0, //amount to move left-right next time step
-    dy: 0 //amount to move up-down next tiem step
+    dy: 0, //amount to move up-down next time step
+    isGrabbed: false
 };
 var fionna = {
-    speed: 256,
+    speed: 3,
+    toStickX: 0,
+    toStickY: 0,
+    toStickMagnitude: 0,
     dx: 0,
     dy: 0
 };
+var mouse = {
+    x: 0,
+    y: 0,
+    velocityX: 0,
+    velocityY: 0,
+    isClicked : false
+};
+
 var sticksFetched = 0;
 var keysDown = {};
-var mouseDown = false;
-var mouseLocX = 0;
-var mouseLocY = 0;
-var mouseVelocity = {x:0, y:0};
 var friction = 0.96;
-var stickGrabbed = false;
 var topPadding = 1;
 var bottomPadding = 2; 
 var leftPadding = 2;
@@ -58,38 +65,38 @@ addEventListener("keyup", function(e) {
     delete keysDown[e.keyCode];
 }, false);
 addEventListener("mousedown", function(e) {
-    mouseDown = true;
+    mouse.isClicked = true;
     //If the mouse clicks down on the stick, we will consider the stick grabbed,
-    // and it will follow the cursor until mouseDown=false
-    if (mouseLocX <= (stick.x + 1.5 * iconSize)
-        && stick.x <= (mouseLocX) 
-        && mouseLocY <= (stick.y + 1.5 * iconSize) 
-        && stick.y <= (mouseLocY)){
-        stickGrabbed = true;
+    // and it will follow the cursor until mouse.isClicked=false
+    if (mouse.x <= (stick.x + 1.5 * iconSize)
+        && stick.x <= (mouse.x) 
+        && mouse.y <= (stick.y + 1.5 * iconSize) 
+        && stick.y <= (mouse.y)){
+        stick.isGrabbed = true;
     }
 }, false);
 addEventListener("mouseup", function(e) {
     //Set so that stick must actually be grabbed in order to throw it.
-    //Might set this back to if (mouseDown) later, could be touchDown or whatever also.
-    if (stickGrabbed) {
-        stick.dx = mouseVelocity.x;
-        stick.dy = mouseVelocity.y;
+    //Might set this back to if (mouse.isClicked) later, could be touchDown or whatever also.
+    if (stick.isGrabbed) {
+        stick.dx = mouse.velocityX;
+        stick.dy = mouse.velocityY;
     }
-    mouseDown = false;
-    //Release the stick if the mouse button is released, or mouseDown = false
-    stickGrabbed = false;
+    mouse.isClicked = false;
+    //Release the stick if the mouse button is released, or mouse.isClicked = false
+    stick.isGrabbed = false;
 }, false);
 addEventListener("mousemove", function(e) {
     e = e || event;
-    mouseVelocity.x = e.pageX - mouseLocX;
-    mouseVelocity.y = e.pageY - mouseLocY;
-    mouseLocX = e.pageX;
-    mouseLocY = e.pageY;
+    mouse.velocityX = e.pageX - mouse.x;
+    mouse.velocityY = e.pageY - mouse.y;
+    mouse.x = e.pageX;
+    mouse.y = e.pageY;
 }, false);
 // Reset the game when the player catches a fionna
 var reset = function() {
     //Release the mouse button variable when the game resets, want the mouse to be picked up every time.
-    mouseDown = false;
+    mouse.isClicked = false;
     stick.x = canvas.width / 2;
     stick.y = canvas.height / 2;
     // Throw the fionna somewhere on the screen randomly
@@ -105,20 +112,20 @@ var update = function(modifier) {
     
     var bounceDecayFactor = 0.95;
     
-    if(mouseDown && stickGrabbed
-        && mouseLocX > leftPadding * iconSize
-        && mouseLocX < (canvas.width - rightPadding * iconSize)
-        && mouseLocY > topPadding * iconSize
-        && mouseLocY < (canvas.height - bottomPadding * iconSize)) {
-        //Center the stick under the cursor at all times while stickGrabbed is true
+    if(mouse.isClicked && stick.isGrabbed
+        && mouse.x > leftPadding * iconSize
+        && mouse.x < (canvas.width - rightPadding * iconSize)
+        && mouse.y > topPadding * iconSize
+        && mouse.y < (canvas.height - bottomPadding * iconSize)) {
+        //Center the stick under the cursor at all times while stick.isGrabbed is true
         //and the mouse button is still held down
-        stick.x = mouseLocX - iconSize / 2;
-        stick.y = mouseLocY - iconSize / 2;
+        stick.x = mouse.x - iconSize / 2;
+        stick.y = mouse.y - iconSize / 2;
     }
-    else if (stick.x+stick.dx > leftPadding * iconSize
-        && stick.x+stick.dx < (canvas.width - rightPadding * iconSize)
-        && stick.y+stick.dy > topPadding * iconSize
-        && stick.y+stick.dy < (canvas.height - bottomPadding * iconSize)){
+    else if (stick.x + stick.dx > leftPadding * iconSize
+        && stick.x + stick.dx < (canvas.width - rightPadding * iconSize)
+        && stick.y + stick.dy > topPadding * iconSize
+        && stick.y + stick.dy < (canvas.height - bottomPadding * iconSize)){
         //Checking for if the next time step will send the stick at its current velocity out of bounds
         //If it won't, move it along by dx and dy and adjust the new dx and dy with our friction variable
         stick.x = stick.x + stick.dx;
@@ -154,6 +161,22 @@ var update = function(modifier) {
         }
         
     }
+    
+    fionna.toStickX = stick.x - fionna.x;
+    fionna.toStickY = stick.y - fionna.y;
+    fionna.toStickMagnitude = Math.sqrt(Math.pow(fionna.toStickX,2), Math.pow(fionna.toStickY,2));
+    fionna.dx = fionna.speed * fionna.toStickX / fionna.toStickMagnitude;
+    fionna.dy = fionna.speed * fionna.toStickY / fionna.toStickMagnitude;
+    
+    
+    if (fionna.x + fionna.dx > leftPadding * iconSize
+        && fionna.x + fionna.dx < (canvas.width - rightPadding * iconSize)
+        && fionna.y + fionna.dy > topPadding * iconSize
+        && fionna.y + fionna.dy < (canvas.height - bottomPadding * iconSize)){
+        fionna.x += fionna.dx;
+        fionna.y += fionna.dy;
+    };
+    
     // Are they touching?
     if(stick.x <= (fionna.x + iconSize) 
        && fionna.x <= (stick.x + iconSize) 
@@ -161,7 +184,7 @@ var update = function(modifier) {
        && fionna.y <= (stick.y + iconSize)) {
         ++sticksFetched;
         reset();
-    }
+    };
 };
 // Draw everything
 var render = function() {
