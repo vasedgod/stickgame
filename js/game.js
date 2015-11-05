@@ -49,7 +49,7 @@ var stick = {
     isGrabbed: false
 };
 var fionna = {
-    speed: 3 + gameScale,
+    speed: 3 + .6 * gameScale,
     toStickX: 0,
     toStickY: 0,
     toStickMagnitude: 0,
@@ -104,8 +104,8 @@ addEventListener("mouseup", function(e) {
 
 addEventListener("mousemove", function(e) {
     e = e || event;
-    mouse.velocityX = (e.pageX - mouse.x) * 2 * gameScale;
-    mouse.velocityY = (e.pageY - mouse.y) * 2 * gameScale;
+    mouse.velocityX = (e.pageX - mouse.x) * gameScale;
+    mouse.velocityY = (e.pageY - mouse.y) * gameScale;
     mouse.x = e.pageX;
     mouse.y = e.pageY;
 }, false);
@@ -127,6 +127,15 @@ var reset = function() {
     stick.dy = 0;
 };
 
+
+var isInBoundary = function(point, direction) {
+    if (direction == "horizontal") {
+        return (point > (horizontalPadding) && point < (canvas.width - horizontalPadding - iconSize));
+    }
+    else if (direction == "vertical") {
+        return (point > (verticalPadding) && point < (canvas.height - verticalPadding - iconSize));
+    }
+};
 
 // Update game objects
 var update = function(modifier) {
@@ -152,13 +161,11 @@ var update = function(modifier) {
     else{
         //Checking for if the next time step will send the stick at its current velocity out of bounds
         //If it won't, move it along by dx and dy and adjust the new dx and dy with our friction variable
-        if (stick.x + stick.dx > (horizontalPadding)
-                && stick.x + stick.dx < (canvas.width - horizontalPadding - iconSize)) {
+        if ( isInBoundary(stick.x + stick.dx, "horizontal") ) {
             stick.x = stick.x + stick.dx;
             stick.dx *= friction - 0.1;
         }
-        if (stick.y + stick.dy > (verticalPadding)
-                && stick.y + stick.dy < (canvas.height - verticalPadding - iconSize)) {
+        if ( isInBoundary(stick.y + stick.dy, "vertical") ) {
             stick.y = stick.y + stick.dy;
             stick.dy *= friction - 0.1;
         }
@@ -202,12 +209,10 @@ var update = function(modifier) {
     
     //Check if Fionna's about to move out of bounds. This shouldn't ever come up while she's not making up her own paths.
     //While she is in bounds, move her by (dx,dy).
-    if (fionna.x + fionna.dx > (horizontalPadding)
-            && fionna.x + fionna.dx < (canvas.width - horizontalPadding - iconSize)) {
+    if ( isInBoundary(fionna.x + fionna.dx, "horizontal") ) {
         fionna.x += fionna.dx;
     }
-    if (fionna.y + fionna.dy > (verticalPadding)
-            && fionna.y + fionna.dy < (canvas.height - verticalPadding - iconSize)) {
+    if ( isInBoundary(fionna.y + fionna.dy, "vertical") ) {
         fionna.y += fionna.dy;
     };
     
